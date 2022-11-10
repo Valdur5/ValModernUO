@@ -324,7 +324,7 @@ public static class OutgoingAccountPackets
 
         var length = (client70130 ?
             11 + (textLength * 2 + 25) * cityInfo.Length :
-            9 + (textLength * 2 +  1) * cityInfo.Length) + count * 60;
+            9 + (textLength * 2 +  1) * cityInfo.Length) + count * 34;
         var writer = new SpanWriter(stackalloc byte[length]);
         writer.Write((byte)0xA9); // Packet ID
         writer.Write((ushort)length);
@@ -336,13 +336,13 @@ public static class OutgoingAccountPackets
 
             if (m == null)
             {
-                writer.Clear(60);
+                writer.Clear(34);
             }
             else
             {
                 var name = (m.RawName?.Trim()).DefaultIfNullOrEmpty("-no name-");
                 writer.WriteAscii(name, 30);
-                writer.Clear(30); // password
+                writer.Write(m.Serial);
             }
         }
 
