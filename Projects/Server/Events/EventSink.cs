@@ -107,7 +107,7 @@ public static partial class EventSink
         ChangeProfileRequest?.Invoke(beholder, beheld, text);
 
     public static event Action<NetState, int> DeleteRequest;
-    public static void InvokeDeleteRequest(NetState state, int index) => DeleteRequest?.Invoke(state, index);
+    public static void InvokeDeleteRequest(NetState state, int serial) => DeleteRequest?.Invoke(state, serial);
 
     public static event Action ServerStarted;
     public static void InvokeServerStarted() => ServerStarted?.Invoke();

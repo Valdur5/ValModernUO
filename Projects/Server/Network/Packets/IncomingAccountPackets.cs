@@ -187,9 +187,9 @@ public static class IncomingAccountPackets
     public static void DeleteCharacter(NetState state, CircularBufferReader reader, int packetLength)
     {
         reader.Seek(30, SeekOrigin.Current);
-        var index = reader.ReadInt32();
+        var serial = reader.ReadInt32();
 
-        EventSink.InvokeDeleteRequest(state, index);
+        EventSink.InvokeDeleteRequest(state, serial);
     }
 
     public static void AccountID(NetState state, CircularBufferReader reader, int packetLength)
@@ -218,25 +218,33 @@ public static class IncomingAccountPackets
         reader.Seek(36, SeekOrigin.Current); // 4 = 0xEDEDEDED, 30 = Name, 2 = unknown
         var flags = reader.ReadInt32();
         reader.Seek(24, SeekOrigin.Current);
-        var charSlot = reader.ReadInt32();
+        var serial = reader.ReadInt32();
         reader.Seek(4, SeekOrigin.Current); // var clientIP = reader.ReadInt32();
 
         var a = state.Account;
-
-        if (a == null || charSlot < 0 || charSlot >= a.Length)
+        Mobile mobile = null;
+        for(int i = 0; i< a.Length; i++)
         {
-            state.Disconnect("Invalid character slot selected.");
-            return;
+            var m = a[i];
+            if (m != null && m.Serial.Value == serial)
+            {
+                mobile = m;
+                break;
+            }
         }
 
-        var m = a[charSlot];
+        if (a == null || mobile == null)
+        {
+            state.Disconnect("Invalid character selected.");
+            return;
+        }
 
         // Check if anyone is using this account
         for (var i = 0; i < a.Length; ++i)
         {
             var check = a[i];
 
-            if (check != null && check.Map != Map.Internal && check != m)
+            if (check != null && check.Map != Map.Internal && check != mobile)
             {
                 state.LogInfo("Account in use");
                 state.SendPopupMessage(PMMessage.CharInWorld);
@@ -244,13 +252,7 @@ public static class IncomingAccountPackets
             }
         }
 
-        if (m == null)
-        {
-            state.Disconnect("Empty character slot selected.");
-            return;
-        }
-
-        m.NetState?.Disconnect("Character selected for a player already logged in.");
+        mobile.NetState?.Disconnect("Character selected for a player already logged in.");
 
         state.SendClientVersionRequest();
 
@@ -258,10 +260,10 @@ public static class IncomingAccountPackets
 
         state.Flags = (ClientFlags)flags;
 
-        state.Mobile = m;
-        m.NetState = state;
+        state.Mobile = mobile;
+        mobile.NetState = state;
 
-        new LoginTimer(state, m).Start();
+        new LoginTimer(state, mobile).Start();
     }
 
     public static void DoLogin(this NetState state, Mobile m)
