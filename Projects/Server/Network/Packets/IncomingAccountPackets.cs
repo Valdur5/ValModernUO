@@ -187,9 +187,9 @@ public static class IncomingAccountPackets
     public static void DeleteCharacter(NetState state, CircularBufferReader reader, int packetLength)
     {
         reader.Seek(30, SeekOrigin.Current);
-        var index = reader.ReadInt32();
+        var serial = reader.ReadInt32();
 
-        EventSink.InvokeDeleteRequest(state, index);
+        EventSink.InvokeDeleteRequest(state, serial);
     }
 
     public static void AccountID(NetState state, CircularBufferReader reader, int packetLength)

@@ -258,7 +258,7 @@ public static class OutgoingAccountPackets
         }
 
         var count = Math.Max(Math.Max(highSlot + 1, a.Limit), 5);
-        var length = 4 + count * 60;
+        var length = 4 + count * 34;
         var writer = new SpanWriter(stackalloc byte[length]);
         writer.Write((byte)0x86); // Packet ID
         writer.Write((ushort)length);
@@ -271,13 +271,13 @@ public static class OutgoingAccountPackets
 
             if (m == null)
             {
-                writer.Clear(60);
+                writer.Clear(34);
             }
             else
             {
                 var name = (m.RawName?.Trim()).DefaultIfNullOrEmpty("-no name-");
                 writer.WriteAscii(name, 30);
-                writer.Clear(30); // password
+                writer.Write(m.Serial);
             }
         }
 

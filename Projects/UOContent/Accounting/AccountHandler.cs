@@ -210,7 +210,7 @@ public static class AccountHandler
         }
     }
 
-    private static void EventSink_DeleteRequest(NetState state, int index)
+    private static void EventSink_DeleteRequest(NetState state, int serial)
     {
         if (state.Account is not Account acct)
         {
@@ -220,41 +220,50 @@ public static class AccountHandler
 
         DeleteResultType res;
 
-        if (index < 0 || index >= acct.Length)
+        if (serial == 0)
         {
             res = DeleteResultType.BadRequest;
         }
         else
         {
-            var m = acct[index];
+            Mobile mobile = null;
+            for(int i = 0; i < acct.Length; i++)
+            {
+                var m = acct[i];
+                if(m != null && m.Serial.Value == serial)
+                {
+                    mobile = m;
+                    break;
+                }
+            }
 
-            if (m == null)
+            if (mobile == null)
             {
                 res = DeleteResultType.CharNotExist;
             }
-            else if (m.NetState != null)
+            else if (mobile.NetState != null)
             {
                 res = DeleteResultType.CharBeingPlayed;
             }
-            else if (acct.AccessLevel == AccessLevel.Player && RestrictDeletion && Core.Now < m.Created + DeleteDelay)
+            else if (acct.AccessLevel == AccessLevel.Player && RestrictDeletion && Core.Now < mobile.Created + DeleteDelay)
             {
                 res = DeleteResultType.CharTooYoung;
             }
             // Don't need to check current location, if netstate is null, they're logged out
             else if (
-                m.AccessLevel == AccessLevel.Player &&
-                Region.Find(m.LogoutLocation, m.LogoutMap).IsPartOf<JailRegion>()
+                mobile.AccessLevel == AccessLevel.Player &&
+                Region.Find(mobile.LogoutLocation, mobile.LogoutMap).IsPartOf<JailRegion>()
             )
             {
                 res = DeleteResultType.BadRequest;
             }
             else
             {
-                state.LogInfo($"Deleting character {index} ({m.Serial})");
+                state.LogInfo($"Deleting character ({mobile.Serial})");
 
-                acct.Comments.Add(new AccountComment("System", $"Character #{index + 1} {m} deleted by {state}"));
+                acct.Comments.Add(new AccountComment("System", $"Character {mobile} deleted by {state}"));
 
-                m.Delete();
+                mobile.Delete();
                 state.SendCharacterListUpdate(acct);
                 return;
             }
